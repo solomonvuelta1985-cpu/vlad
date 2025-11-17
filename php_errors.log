@@ -57,3 +57,5 @@ Stack trace:
 [17-Nov-2025 11:50:25 Europe/Berlin] Citation 2 status changed from 'contested' to 'pending' by admin
 [17-Nov-2025 12:05:29 Europe/Berlin] Citation 2 status changed from 'pending' to 'contested' by admin
 [17-Nov-2025 12:10:49 Europe/Berlin] Citation 2 status changed from 'contested' to 'pending' by admin
+[17-Nov-2025 12:20:25 Europe/Berlin] Citation 2 status changed from 'pending' to 'void' by admin
+[17-Nov-2025 12:20:36 Europe/Berlin] Citation 2 status changed from 'void' to 'pending' by admin

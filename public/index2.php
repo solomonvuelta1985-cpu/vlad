@@ -810,7 +810,44 @@ if (empty($_SESSION['csrf_token'])) {
             return null;
         }
 
-        dateOfBirthInput.addEventListener('change', () => {
+        // Debounce timer for DOB validation
+        let dobValidationTimer = null;
+
+        dateOfBirthInput.addEventListener('input', () => {
+            // Clear any pending validation
+            if (dobValidationTimer) {
+                clearTimeout(dobValidationTimer);
+            }
+
+            // Wait 1.5 seconds after user stops typing before validating
+            dobValidationTimer = setTimeout(() => {
+                if (dateOfBirthInput.value) {
+                    const age = calculateAge(dateOfBirthInput.value);
+                    if (age >= 0 && age <= 120) {
+                        ageField.value = age;
+
+                        // Auto-check minor violation if under 18
+                        const noLicenseMinorCheckbox = findViolationCheckboxByText("NO DRIVER'S LICENSE / MINOR");
+                        if (age < 18 && noLicenseMinorCheckbox) {
+                            noLicenseMinorCheckbox.checked = true;
+                        }
+                    } else {
+                        ageField.value = '';
+                    }
+                } else {
+                    ageField.value = '';
+                }
+            }, 1500);
+        });
+
+        // Also validate on blur (when user leaves the field)
+        dateOfBirthInput.addEventListener('blur', () => {
+            // Clear pending timer
+            if (dobValidationTimer) {
+                clearTimeout(dobValidationTimer);
+                dobValidationTimer = null;
+            }
+
             if (dateOfBirthInput.value) {
                 const age = calculateAge(dateOfBirthInput.value);
                 if (age >= 0 && age <= 120) {

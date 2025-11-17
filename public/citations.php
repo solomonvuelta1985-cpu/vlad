@@ -381,6 +381,52 @@ if ($pdo) {
             border-color: #d3d6d8;
         }
 
+        .badge-void {
+            background: #f8d7da;
+            color: #842029;
+            border-color: #f5c2c7;
+        }
+
+        /* Action dropdown fix - make it float outside table */
+        .table-container {
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+
+        .table-container table {
+            overflow: visible;
+            min-width: 1000px;
+        }
+
+        .btn-group .dropdown-menu {
+            position: absolute;
+            z-index: 1050;
+        }
+
+        /* Action buttons inline styling */
+        td .btn-group,
+        td .btn {
+            display: inline-flex;
+            vertical-align: middle;
+        }
+
+        tbody td {
+            white-space: nowrap;
+        }
+
+        tbody td:last-child {
+            white-space: nowrap;
+        }
+
+        tbody td .btn {
+            margin-left: 2px;
+            margin-right: 0;
+        }
+
+        tbody td .btn:first-child {
+            margin-left: 0;
+        }
+
         /* Pagination */
         .pagination-container {
             margin-top: 20px;
@@ -609,6 +655,7 @@ if ($pdo) {
                                     <td><strong><?php echo htmlspecialchars($citation['ticket_number']); ?></strong></td>
                                     <td><?php echo date('M d, Y h:i A', strtotime($citation['apprehension_datetime'])); ?></td>
                                     <td>
+                                        <a href="#" class="text-decoration-none text-primary fw-bold" onclick="quickInfo(<?php echo $citation['citation_id']; ?>); return false;" title="Click for quick info">
                                         <?php
                                         $name = $citation['last_name'] . ', ' . $citation['first_name'];
                                         if (!empty($citation['middle_initial'])) {
@@ -616,6 +663,7 @@ if ($pdo) {
                                         }
                                         echo htmlspecialchars($name);
                                         ?>
+                                        </a>
                                     </td>
                                     <td><?php echo htmlspecialchars($citation['license_number'] ?: 'N/A'); ?></td>
                                     <td><?php echo htmlspecialchars($citation['plate_mv_engine_chassis_no']); ?></td>
@@ -635,14 +683,27 @@ if ($pdo) {
                                         </span>
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-info btn-sm" onclick="viewCitation(<?php echo $citation['citation_id']; ?>)">
+                                        <button type="button" class="btn btn-info btn-sm" onclick="viewCitation(<?php echo $citation['citation_id']; ?>)" title="View">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button type="button" class="btn btn-warning btn-sm" onclick="editCitation(<?php echo $citation['citation_id']; ?>)">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" title="Update Status">
+                                                <i class="fas fa-tasks"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="#" onclick="quickStatusUpdate(<?php echo $citation['citation_id']; ?>, 'paid')"><i class="fas fa-check-circle text-success"></i> Mark as Paid</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="quickStatusUpdate(<?php echo $citation['citation_id']; ?>, 'contested')"><i class="fas fa-gavel text-primary"></i> Contest</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="quickStatusUpdate(<?php echo $citation['citation_id']; ?>, 'dismissed')"><i class="fas fa-times-circle text-secondary"></i> Dismiss</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="quickStatusUpdate(<?php echo $citation['citation_id']; ?>, 'void')"><i class="fas fa-ban text-danger"></i> Void</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item" href="#" onclick="quickStatusUpdate(<?php echo $citation['citation_id']; ?>, 'pending')"><i class="fas fa-clock text-warning"></i> Reset to Pending</a></li>
+                                            </ul>
+                                        </div>
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="editCitation(<?php echo $citation['citation_id']; ?>)" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         <?php if (is_admin()): ?>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteCitation(<?php echo $citation['citation_id']; ?>)">
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteCitation(<?php echo $citation['citation_id']; ?>)" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                         <?php endif; ?>
@@ -731,11 +792,85 @@ if ($pdo) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="statusDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-tasks"></i> Update Status
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="openStatusModal('paid')"><i class="fas fa-check-circle text-success"></i> Mark as Paid</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="openStatusModal('contested')"><i class="fas fa-gavel text-primary"></i> Contest Citation</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="openStatusModal('dismissed')"><i class="fas fa-times-circle text-secondary"></i> Dismiss Citation</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="openStatusModal('void')"><i class="fas fa-ban text-danger"></i> Void Citation</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="openStatusModal('pending')"><i class="fas fa-clock text-warning"></i> Reset to Pending</a></li>
+                        </ul>
+                    </div>
                     <button type="button" class="btn btn-warning" id="editFromViewBtn">
                         <i class="fas fa-edit"></i> Edit
                     </button>
                     <button type="button" class="btn btn-info" onclick="printCitation()">
                         <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Info Modal -->
+    <div class="modal fade" id="quickInfoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-info-circle"></i> Quick Summary</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="quickInfoContent">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-info" id="viewFullDetailsBtn">
+                        <i class="fas fa-eye"></i> View Full Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Update Modal -->
+    <div class="modal fade" id="statusModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-tasks"></i> Update Citation Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="statusForm">
+                        <input type="hidden" name="citation_id" id="statusCitationId">
+                        <input type="hidden" name="new_status" id="newStatus">
+                        <input type="hidden" name="csrf_token" value="<?php echo generate_token(); ?>">
+
+                        <div class="alert alert-info" id="statusAlertInfo">
+                            <i class="fas fa-info-circle"></i>
+                            <span id="statusMessage"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Reason/Notes (Optional)</label>
+                            <textarea name="reason" class="form-control" rows="4" placeholder="Enter reason for status change..."></textarea>
+                            <small class="text-muted">This will be appended to the citation remarks.</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmStatusBtn">
+                        <i class="fas fa-check"></i> Confirm
                     </button>
                 </div>
             </div>
@@ -759,8 +894,12 @@ if ($pdo) {
             window.location = url;
         }
 
+        // Current citation ID for status updates
+        let currentCitationId = null;
+
         // View citation
         function viewCitation(id) {
+            currentCitationId = id;
             const modal = new bootstrap.Modal(document.getElementById('viewModal'));
             modal.show();
 
@@ -872,6 +1011,12 @@ if ($pdo) {
                         </tr>
                     </tbody>
                 </table>
+                <table class="detail-table mt-2">
+                    <tr>
+                        <th>Apprehension Officer</th>
+                        <td>${citation.apprehension_officer || 'N/A'}</td>
+                    </tr>
+                </table>
 
                 ${citation.remarks ? `
                     <div class="section-title"><i class="fas fa-comment"></i> Remarks</div>
@@ -924,6 +1069,173 @@ if ($pdo) {
         function printCitation() {
             window.print();
         }
+
+        // Status update functions
+        function openStatusModal(newStatus) {
+            if (!currentCitationId) {
+                alert('No citation selected');
+                return;
+            }
+
+            const statusMessages = {
+                'paid': 'You are about to mark this citation as <strong>PAID</strong>. This indicates the violator has settled the fine.',
+                'contested': 'You are about to mark this citation as <strong>CONTESTED</strong>. This indicates the violator is disputing the citation.',
+                'dismissed': 'You are about to <strong>DISMISS</strong> this citation. This removes the violation without payment.',
+                'void': 'You are about to <strong>VOID</strong> this citation. This permanently invalidates the citation.',
+                'pending': 'You are about to reset this citation to <strong>PENDING</strong> status.'
+            };
+
+            document.getElementById('statusCitationId').value = currentCitationId;
+            document.getElementById('newStatus').value = newStatus;
+            document.getElementById('statusMessage').innerHTML = statusMessages[newStatus] || 'Update citation status.';
+            document.querySelector('#statusForm textarea[name="reason"]').value = '';
+
+            // Change alert color based on status
+            const alertBox = document.getElementById('statusAlertInfo');
+            alertBox.className = 'alert';
+            if (newStatus === 'void' || newStatus === 'dismissed') {
+                alertBox.classList.add('alert-warning');
+            } else if (newStatus === 'paid') {
+                alertBox.classList.add('alert-success');
+            } else {
+                alertBox.classList.add('alert-info');
+            }
+
+            const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+            statusModal.show();
+        }
+
+        // Quick status update from table
+        function quickStatusUpdate(citationId, newStatus) {
+            currentCitationId = citationId;
+            openStatusModal(newStatus);
+        }
+
+        // Quick info modal
+        function quickInfo(id) {
+            currentCitationId = id;
+            const modal = new bootstrap.Modal(document.getElementById('quickInfoModal'));
+            modal.show();
+
+            fetch(`../api/citation_get.php?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        displayQuickInfo(data.citation);
+                        document.getElementById('viewFullDetailsBtn').onclick = () => {
+                            bootstrap.Modal.getInstance(document.getElementById('quickInfoModal')).hide();
+                            viewCitation(id);
+                        };
+                    } else {
+                        document.getElementById('quickInfoContent').innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle"></i> ${data.message}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('quickInfoContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> Failed to load citation info.
+                        </div>
+                    `;
+                });
+        }
+
+        function displayQuickInfo(citation) {
+            const violationsList = citation.violations.map(v =>
+                `<li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>${v.violation_type}</span>
+                    <span class="badge bg-danger">P${parseFloat(v.fine_amount).toFixed(2)}</span>
+                </li>`
+            ).join('');
+
+            const html = `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0"><i class="fas fa-user"></i> ${citation.last_name}, ${citation.first_name} ${citation.middle_initial || ''}</h6>
+                        <span class="badge badge-${citation.status}">${citation.status.toUpperCase()}</span>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-ticket-alt"></i> Ticket: <strong>${citation.ticket_number}</strong>
+                    </small>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Age</small>
+                        <strong>${citation.age || 'N/A'}</strong>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">License #</small>
+                        <strong>${citation.license_number || 'N/A'}</strong>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Vehicle</small>
+                        <strong>${citation.plate_mv_engine_chassis_no}</strong>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Date</small>
+                        <strong>${new Date(citation.apprehension_datetime).toLocaleDateString()}</strong>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-1"><i class="fas fa-exclamation-triangle"></i> Violations (${citation.violations.length})</small>
+                    <ul class="list-group list-group-flush">
+                        ${violationsList}
+                    </ul>
+                </div>
+
+                <div class="alert alert-warning mb-0 py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>Total Fine:</strong>
+                        <span class="fs-5 fw-bold">P${parseFloat(citation.total_fine).toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('quickInfoContent').innerHTML = html;
+        }
+
+        // Confirm status update
+        document.getElementById('confirmStatusBtn').addEventListener('click', function() {
+            const formData = new FormData(document.getElementById('statusForm'));
+
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            fetch('../api/citation_status.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    // Close both modals and reload
+                    bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+                    bootstrap.Modal.getInstance(document.getElementById('viewModal')).hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                    if (data.new_csrf_token) {
+                        document.querySelector('#statusForm input[name="csrf_token"]').value = data.new_csrf_token;
+                    }
+                }
+            })
+            .catch(error => {
+                alert('Failed to update status: ' + error.message);
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-check"></i> Confirm';
+            });
+        });
     </script>
 </body>
 </html>

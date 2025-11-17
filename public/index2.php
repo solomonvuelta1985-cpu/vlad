@@ -64,10 +64,15 @@ try {
         $_SESSION['violation_types'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     $violation_types = $_SESSION['violation_types'];
+
+    // Fetch active apprehending officers
+    $stmt = $conn->query("SELECT officer_id, officer_name, badge_number, position FROM apprehending_officers WHERE is_active = 1 ORDER BY officer_name");
+    $apprehending_officers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $next_ticket = "06101";
     $driver_data = [];
     $violation_types = [];
+    $apprehending_officers = [];
     error_log("PDOException in index2.php: " . $e->getMessage());
 }
 $conn = null;
@@ -607,6 +612,22 @@ if (empty($_SESSION['csrf_token'])) {
                             <label class="form-label">Place of Apprehension *</label>
                             <input type="text" name="place_of_apprehension" class="form-control" placeholder="Enter place of apprehension" required>
                         </div>
+                        <div class="col-12">
+                            <label class="form-label">Apprehension Officer *</label>
+                            <select name="apprehension_officer" class="form-select" id="apprehensionOfficer" required>
+                                <option value="" disabled selected>Select Apprehension Officer</option>
+                                <?php if (!empty($apprehending_officers)): ?>
+                                    <?php foreach ($apprehending_officers as $officer): ?>
+                                        <option value="<?php echo htmlspecialchars($officer['officer_name']); ?>">
+                                            <?php echo htmlspecialchars($officer['officer_name']); ?>
+                                            <?php if (!empty($officer['badge_number'])): ?>
+                                                (<?php echo htmlspecialchars($officer['badge_number']); ?>)
+                                            <?php endif; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -796,7 +817,7 @@ if (empty($_SESSION['csrf_token'])) {
                     ageField.value = age;
 
                     // Auto-check minor violation if under 18
-                    const noLicenseMinorCheckbox = findViolationCheckboxByText("NO DRIVER'S LICENSE");
+                    const noLicenseMinorCheckbox = findViolationCheckboxByText("NO DRIVER'S LICENSE / MINOR");
                     if (age < 18 && noLicenseMinorCheckbox) {
                         noLicenseMinorCheckbox.checked = true;
                     }
@@ -818,7 +839,9 @@ if (empty($_SESSION['csrf_token'])) {
         }
 
         // === AUTO-CHECK NO LICENSE VIOLATION ===
-        const noLicenseViolationCheckbox = findViolationCheckboxByText("NO DRIVER'S LICENSE");
+        const noLicenseViolationCheckbox = findViolationCheckboxByText("NO DRIVER'S LICENSE / MINOR");
+        let licenseValidationPrompted = false;
+
         hasLicenseCheckbox.addEventListener('change', () => {
             const isChecked = hasLicenseCheckbox.checked;
             licenseFields.forEach(field => {
@@ -833,12 +856,29 @@ if (empty($_SESSION['csrf_token'])) {
                 });
             });
 
-            // Auto-toggle violation
-            if (!isChecked && noLicenseViolationCheckbox) {
-                noLicenseViolationCheckbox.checked = true;
-            } else if (isChecked && noLicenseViolationCheckbox) {
-                noLicenseViolationCheckbox.checked = false;
-            }
+            // Reset validation flag when license status changes
+            licenseValidationPrompted = false;
+        });
+
+        // Prompt when user selects a Vehicle Type
+        vehicleTypeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Check for no license violation after selecting vehicle type (with 3 second delay)
+                if (!hasLicenseCheckbox.checked && !licenseValidationPrompted && noLicenseViolationCheckbox && !noLicenseViolationCheckbox.checked) {
+                    licenseValidationPrompted = true;
+                    setTimeout(() => {
+                        const confirmAdd = confirm('The "Has License" checkbox is unchecked.\n\nDo you want to automatically add "NO DRIVER\'S LICENSE / MINOR" violation?');
+                        if (confirmAdd) {
+                            noLicenseViolationCheckbox.checked = true;
+                            // Expand the accordion section containing this violation
+                            const accordionBody = noLicenseViolationCheckbox.closest('.accordion-collapse');
+                            if (accordionBody && !accordionBody.classList.contains('show')) {
+                                new bootstrap.Collapse(accordionBody, { show: true });
+                            }
+                        }
+                    }, 3000); // 3 second delay
+                }
+            });
         });
 
         // Auto-populate Municipality and Province

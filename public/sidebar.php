@@ -28,6 +28,11 @@
                 <i class="fas fa-search"></i> Search
             </a>
         </li>
+        <li>
+            <a href="/vlad/public/officers.php" class="<?php echo (basename($_SERVER['PHP_SELF']) === 'officers.php') ? 'active' : ''; ?>">
+                <i class="fas fa-user-shield"></i> Officers
+            </a>
+        </li>
         <?php if (function_exists('is_admin') && is_admin()): ?>
         <li class="sidebar-divider"></li>
         <li class="sidebar-heading">Admin</li>

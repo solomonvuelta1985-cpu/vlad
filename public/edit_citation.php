@@ -68,6 +68,10 @@ try {
     }
     $violation_types = $_SESSION['violation_types'];
 
+    // Fetch active apprehending officers
+    $stmt = $conn->query("SELECT officer_id, officer_name, badge_number, position FROM apprehending_officers WHERE is_active = 1 ORDER BY officer_name");
+    $apprehending_officers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 } catch (PDOException $e) {
     error_log("PDOException in edit_citation.php: " . $e->getMessage());
     header('Location: citations.php?error=db_error');
@@ -425,6 +429,36 @@ if (empty($_SESSION['csrf_token'])) {
                         <div class="col-12">
                             <label class="form-label">Place of Apprehension *</label>
                             <input type="text" name="place_of_apprehension" class="form-control" value="<?php echo htmlspecialchars($citation['place_of_apprehension']); ?>" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Apprehension Officer *</label>
+                            <select name="apprehension_officer" class="form-select" required>
+                                <option value="" disabled>Select Apprehension Officer</option>
+                                <?php
+                                $current_officer = $citation['apprehension_officer'] ?? '';
+                                $officer_found = false;
+                                if (!empty($apprehending_officers)):
+                                    foreach ($apprehending_officers as $officer):
+                                        $is_selected = ($officer['officer_name'] === $current_officer);
+                                        if ($is_selected) $officer_found = true;
+                                ?>
+                                    <option value="<?php echo htmlspecialchars($officer['officer_name']); ?>" <?php echo $is_selected ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($officer['officer_name']); ?>
+                                        <?php if (!empty($officer['badge_number'])): ?>
+                                            (<?php echo htmlspecialchars($officer['badge_number']); ?>)
+                                        <?php endif; ?>
+                                    </option>
+                                <?php
+                                    endforeach;
+                                endif;
+                                // If the current officer is not in the list, add it as an option
+                                if (!$officer_found && !empty($current_officer)):
+                                ?>
+                                    <option value="<?php echo htmlspecialchars($current_officer); ?>" selected>
+                                        <?php echo htmlspecialchars($current_officer); ?> (Not in current list)
+                                    </option>
+                                <?php endif; ?>
+                            </select>
                         </div>
                     </div>
                 </div>

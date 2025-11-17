@@ -64,7 +64,7 @@ try {
     $required_fields = [
         'ticket_number', 'last_name', 'first_name', 'barangay',
         'plate_mv_engine_chassis_no', 'apprehension_datetime',
-        'place_of_apprehension'
+        'place_of_apprehension', 'apprehension_officer'
     ];
 
     $errors = [];
@@ -131,6 +131,7 @@ try {
             vehicle_description = ?,
             apprehension_datetime = ?,
             place_of_apprehension = ?,
+            apprehension_officer = ?,
             remarks = ?,
             status = ?,
             updated_at = NOW()
@@ -153,6 +154,7 @@ try {
             $data['vehicle_description'] ?? null,
             $data['apprehension_datetime'],
             $data['place_of_apprehension'],
+            $data['apprehension_officer'],
             $data['remarks'] ?? null,
             $data['status'] ?? 'pending',
             $citation_id
